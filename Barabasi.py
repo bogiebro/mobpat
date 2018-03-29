@@ -8,6 +8,21 @@ import pandas as pd
 from collections import defaultdict
 from collections import defaultdict
 
+# The frequency here is about specific places, not distances in general. 
+# We want to plot, for each frequency f and radius r, the number of people who
+# visit at least one place with distance between r and r+2 of their homes exactly
+# f times each month. 
+
+# Verify with Paolo
+
+# Should plot the initial locations
+# Should plot aggregate distance traveled per cell
+# Can plot normalized measure too:
+  # Energy in a cell i is
+  # sum over all cells s and frequencies f of dist(s,i) * N_v(s,i,f) * Dout^{-1}(s, f)
+  # where D_v(s,i,f) is the number of distinct visitors who reside in the sth cell
+  # and visit the ith cell. 
+
 
 alpha = 0.55
 h = 100
@@ -33,18 +48,20 @@ def sample_numhops():
         h += sample_delay()
     return i
 
-
 rho = 0.6
 gamma = 0.21
 
 def distance(home, pos):
   diff = home - pos
-  return np.sqrt(diff.dot(diff))
+  return np.sqrt(diff.dot(diff)).astype(int)
+
+# use numpy append
 
 def walkers(n):
-  freq_dist_count = [defaultdict(int) for _ in range(10)]
+  # freq_dist_count[i][j] gives the number of people who visit radius j to j+2 with frequency i+1
+  freq_dist_count = np.zeros((50,100))
   for i in range(n):
-    dist_freq = defaultdict(int)
+    dist_freq = np.zeros(100).astype(int)
     visits = [1.0]
     S = 1
     home = rnd.uniform(0, 99, 2)
@@ -52,7 +69,10 @@ def walkers(n):
     visited = [pos]
     loc = S
     for _ in range(sample_numhops() + 1):
-      dist_freq[distance(home, pos)] += 1
+      dist = distance(home, pos)
+      if dist < 100: dist_freq[dist] += 1
+      if dist < 101: dist_freq[dist-1] += 1
+      if dist < 102: dist_freq[dist-2] += 1
       if rnd.random() < rho * S ** -gamma:
         visits.append(1)
         S += 1
@@ -67,28 +87,21 @@ def walkers(n):
         loc = rnd.choice(S, p=va / va.sum())
         visits[loc] += 1
         pos = visited[loc]
-    for k,v in dist_freq.items():
-      if v > 10: continue
+    for k,v in enumerate(dist_freq):
+      if v > 50: continue
       freq_dist_count[v - 1][k] += 1
   return freq_dist_count
 
-freq_dist_count = walkers(2000000)
+acc_freq_dists = walkers(1000)
 
 plt.figure(figsize=(15,10))
-
-bins = 120
-for f in range(10):
-    s = pd.Series(freq_dist_count[f])
-    bvc, bins = pd.cut(s.index, bins, retbins=True, labels=False)
-    vc = s.groupby(bvc).sum()
-    plt.loglog(bins[:len(vc)], vc, 'o')
+for f in range(50):
+  plt.loglog(range(100), acc_freq_dists[f], 'o')
+plt.legend(np.arange(50)+1)
 plt.savefig('r_vs_people.png', bbox_inches='tight')
 plt.clf()
 
-bins = 120
-for f in range(10):
-    s = pd.Series(freq_dist_count[f])
-    bvc, bins = pd.cut(s.index * (f+1)**2, bins, retbins=True, labels=False)
-    vc = s.groupby(bvc).sum()
-    plt.loglog(bins[:len(vc)], vc, 'o')
-plt.savefig('rf2_vs_people.png', bbox_inches='tight')
+# plt.figure(figsize=(15,10))
+# for f in range(10):
+#   plt.plot(np.arange(100) * f**2, acc_freq_dists[f], 'o')
+# plt.savefig('r_vs_people.png', bbox_inches='tight')
