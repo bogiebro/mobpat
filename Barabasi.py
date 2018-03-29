@@ -8,6 +8,17 @@ import pandas as pd
 from collections import defaultdict
 from collections import defaultdict
 
+# decemberists (ill be your girl)
+
+# they only look at o-d flows where at least two visitors contribute to the flow
+# for each pair of cells
+
+# for each person:
+  # for each cell, gather number of times that cell is visited
+  # put a 1 in the global (frequency x distance -> people) table
+  # for all distances for which there was at least one place the user visited
+  # with that frequecy
+
 # The frequency here is about specific places, not distances in general. 
 # We want to plot, for each frequency f and radius r, the number of people who
 # visit at least one place with distance between r and r+2 of their homes exactly
@@ -23,6 +34,7 @@ from collections import defaultdict
   # where D_v(s,i,f) is the number of distinct visitors who reside in the sth cell
   # and visit the ith cell. 
 
+# average distance per visit for each specific month frequency
 
 alpha = 0.55
 h = 100
